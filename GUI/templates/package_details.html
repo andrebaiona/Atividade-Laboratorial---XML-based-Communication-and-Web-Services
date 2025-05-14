@@ -1,0 +1,117 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    {% if package %}
+        Detalhes Pacote #{{ package.id }}
+    {% else %}
+        Detalhes Pacote
+    {% endif %}
+{% endblock %}
+
+
+{% block content %}
+{% if package %}
+    <h2><i class="bi bi-box"></i> Detalhes do Pacote #{{ package.id }} - {{ package.name }}</h2>
+    <hr>
+    <div class="row">
+        <div class="col-md-6">
+            <p><strong>Nome:</strong> {{ package.name }}</p>
+            <p><strong>Descrição:</strong> {{ package.description | default('N/A', true) }}</p>
+            {% if package.sender_username %}
+            <p><strong>Remetente:</strong> {{ package.sender_username }}</p>
+            {% endif %}
+             {% if package.receiver_username %}
+            <p><strong>Destinatário:</strong> {{ package.receiver_username }}</p>
+             {% endif %}
+        </div>
+        <div class="col-md-6">
+             <p><strong>Cidade Origem:</strong> {{ package.sender_city }}</p>
+             <p><strong>Cidade Destino:</strong> {{ package.destination_city }}</p>
+             <p><strong>Rastreamento Ativo:</strong>
+                 {% if package.is_tracked %}
+                    <span class="badge bg-success">Sim</span>
+                {% else %}
+                    <span class="badge bg-secondary">Não</span>
+                     {% if session.role == 'admin' %}
+                     <small class="ms-2">(Admin: <a href="#" data-bs-toggle="modal" data-bs-target="#registerTrackModal{{package.id}}">Registar Rastreio</a>)</small>
+                      {% endif %}
+                {% endif %}
+             </p>
+             {% if package.creation_date %}
+              <p><strong>Data Criação:</strong> <small>{{ package.creation_date | replace('T', ' ') }}</small></p>
+             {% endif %}
+        </div>
+    </div>
+
+    <h3 class="mt-4"><i class="bi bi-truck"></i> Histórico de Rastreamento</h3>
+    {% if package.is_tracked %}
+        {% if tracking_history %}
+        <ul class="list-group">
+            {% for status in tracking_history | reverse %} 
+             <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-geo-alt-fill text-primary"></i> {{ status.city }}</span>
+                <small class="text-muted">{{ status.timestamp | replace('T', ' ') if status.timestamp }}</small>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+         <div class="alert alert-info">Ainda não existem registos de rastreamento para este pacote.</div>
+        {% endif %}
+
+        {% if session.role == 'admin' %}
+        <div class="card mt-3">
+             <div class="card-body">
+                 <h5 class="card-title">Atualizar Estado (Admin)</h5>
+                 <form action="{{ url_for('update_status', package_id=package.id) }}" method="post">
+                     <div class="input-group">
+                         <span class="input-group-text"><i class="bi bi-pin-map-fill"></i></span>
+                         <input type="text" name="city" class="form-control" placeholder="Nova Localização" required>
+                         <button type="submit" class="btn btn-primary">Adicionar</button>
+                    </div>
+                 </form>
+             </div>
+         </div>
+         {% endif %}
+
+    {% else %}
+        <div class="alert alert-secondary">O rastreamento não está ativo para este pacote.</div>
+    {% endif %}
+
+    <div class="mt-4">
+         <a href="{{ request.referrer or url_for('index') }}" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> Voltar</a>
+    </div>
+
+     {% if session.role == 'admin' and not package.is_tracked %}
+        <div class="modal fade" id="registerTrackModal{{package.id}}" tabindex="-1" aria-labelledby="registerTrackModalLabel{{package.id}}" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="registerTrackModalLabel{{package.id}}">Registar Rastreio para Pacote #{{package.id}}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+               <form action="{{ url_for('register_track', package_id=package.id) }}" method="post">
+                  <div class="modal-body">
+                      <div class="mb-3">
+                        <label for="initial_city_{{package.id}}" class="form-label">Cidade Inicial *</label>
+                        <input type="text" name="initial_city" id="initial_city_{{package.id}}" class="form-control" placeholder="Cidade onde o rastreio começa" required>
+                      </div>
+                       <p><small>O timestamp será definido para a hora atual.</small></p>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning"><i class="bi bi-geo-alt-fill"></i> Registar Rastreio</button>
+                  </div>
+              </form>
+            </div>
+          </div>
+        </div>
+     {% endif %}
+
+
+{% else %}
+ <div class="alert alert-danger">
+     Pacote não encontrado ou acesso não permitido. <a href="{{ url_for('index') }}">Voltar ao Dashboard</a>.
+</div>
+{% endif %} 
+
+{% endblock %}

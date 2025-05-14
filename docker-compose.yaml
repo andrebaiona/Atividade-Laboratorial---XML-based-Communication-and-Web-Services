@@ -1,0 +1,84 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: tracking_db_mysql
+    command: --default-authentication-plugin=mysql_native_password 
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3307:3306" 
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql 
+    networks:
+      - tracking_network
+    healthcheck: 
+        test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost", "-u", "${MYSQL_USER}", "-p${MYSQL_PASSWORD}"]
+        interval: 10s
+        timeout: 5s
+        retries: 5
+
+  ws1:
+    build: ./ws1
+    container_name: tracking_ws1
+    environment:
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_HOST: db
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_PORT: 3306
+
+    ports:
+      - "5001:5001"
+    depends_on:
+        db:
+            condition: service_healthy 
+    networks:
+      - tracking_network
+    restart: unless-stopped
+
+  ws2:
+    build: ./ws2
+    container_name: tracking_ws2
+    environment:
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_HOST: db
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_PORT: 3306
+    ports:
+      - "5002:5002"
+    depends_on:
+        db:
+            condition: service_healthy
+    networks:
+      - tracking_network
+    restart: unless-stopped
+
+  gui:
+    build: ./gui
+    container_name: tracking_gui
+    environment:
+      WSDL_WS1_URL: http://ws1:5001/ws1?wsdl
+      WSDL_WS2_URL: http://ws2:5002/ws2?wsdl
+      SECRET_KEY: ${FLASK_SECRET_KEY}
+      FLASK_DEBUG: ${FLASK_DEBUG:-0} 
+    ports:
+      - "5000:5000"
+    depends_on:
+      - ws1
+      - ws2
+    networks:
+      - tracking_network
+    restart: unless-stopped
+
+networks:
+  tracking_network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+    driver: local

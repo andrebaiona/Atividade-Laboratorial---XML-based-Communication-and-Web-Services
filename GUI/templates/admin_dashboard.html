@@ -1,0 +1,65 @@
+{% extends "layout.html" %}
+{% block title %}Dashboard Administrador{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+     <h2>Gestão de Pacotes</h2>
+     <a href="{{ url_for('add_package') }}" class="btn btn-success">Adicionar Pacote</a>
+</div>
+
+{% if packages %}
+<table class="table table-striped table-hover table-sm">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Nome</th>
+            <th>Remetente</th>
+            <th>Destinatário</th>
+            <th>Origem</th>
+            <th>Destino</th>
+            <th>Rastreado?</th>
+            <th>Criado em</th>
+            <th>Ações</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for pkg in packages %}
+        <tr>
+            <td>{{ pkg.id }}</td>
+            <td>{{ pkg.name }}</td>
+            <td>{{ pkg.sender_username }}</td>
+            <td>{{ pkg.receiver_username }}</td>
+            <td>{{ pkg.sender_city }}</td>
+            <td>{{ pkg.destination_city }}</td>
+            <td>{{ 'Sim' if pkg.is_tracked else 'Não' }}</td>
+            <td>{{ pkg.creation_date | replace('T', ' ') if pkg.creation_date }}</td>
+            <td>
+                <a href="{{ url_for('package_details', package_id=pkg.id) }}" class="btn btn-sm btn-info mb-1" title="Ver Detalhes"><i class="bi bi-eye"></i> Ver</a>
+
+                {% if not pkg.is_tracked %}
+                 <form action="{{ url_for('register_track', package_id=pkg.id) }}" method="post" class="d-inline-block mb-1">
+                    <div class="input-group input-group-sm">
+                         <input type="text" name="initial_city" class="form-control form-control-sm" placeholder="Cidade inicial" required>
+                         <button type="submit" class="btn btn-sm btn-warning" title="Registar Rastreio"><i class="bi bi-geo-alt-fill"></i> Registar</button>
+                    </div>
+                 </form>
+                 {% else %}
+                 <form action="{{ url_for('update_status', package_id=pkg.id) }}" method="post" class="d-inline-block mb-1">
+                     <div class="input-group input-group-sm">
+                         <input type="text" name="city" class="form-control form-control-sm" placeholder="Nova cidade" required>
+                         <button type="submit" class="btn btn-sm btn-primary" title="Atualizar Estado"><i class="bi bi-pin-map-fill"></i> Atualizar</button>
+                    </div>
+                 </form>
+                 {% endif %}
+
+                 <form action="{{ url_for('delete_package', package_id=pkg.id) }}" method="post" class="d-inline-block" onsubmit="return confirm('Tem a certeza que quer remover este pacote?');">
+                     <button type="submit" class="btn btn-sm btn-danger" title="Remover Pacote"><i class="bi bi-trash"></i> Remover</button>
+                 </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>Não existem pacotes no sistema.</p>
+{% endif %}
+{% endblock %}

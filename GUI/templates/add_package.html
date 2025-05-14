@@ -1,0 +1,47 @@
+{% extends "layout.html" %}
+{% block title %}Adicionar Pacote{% endblock %}
+{% block content %}
+<h2>Adicionar Novo Pacote</h2>
+<form method="post">
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label for="sender_id" class="form-label">Remetente</label>
+            <select class="form-select" id="sender_id" name="sender_id" required>
+                <option value="" selected disabled>Selecione...</option>
+                {% for user in users %}
+                <option value="{{ user.id }}">{{ user.username }} (ID: {{ user.id }})</option>
+                {% endfor %}
+            </select>
+        </div>
+         <div class="col-md-6">
+            <label for="receiver_id" class="form-label">Destinatário</label>
+            <select class="form-select" id="receiver_id" name="receiver_id" required>
+                 <option value="" selected disabled>Selecione...</option>
+                 {% for user in users %}
+                <option value="{{ user.id }}">{{ user.username }} (ID: {{ user.id }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-12">
+            <label for="name" class="form-label">Nome do Pacote</label>
+            <input type="text" class="form-control" id="name" name="name" required>
+        </div>
+        <div class="col-12">
+            <label for="description" class="form-label">Descrição</label>
+            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+        </div>
+         <div class="col-md-6">
+            <label for="sender_city" class="form-label">Cidade Origem</label>
+            <input type="text" class="form-control" id="sender_city" name="sender_city" required>
+        </div>
+         <div class="col-md-6">
+            <label for="destination_city" class="form-label">Cidade Destino</label>
+            <input type="text" class="form-control" id="destination_city" name="destination_city" required>
+        </div>
+    </div>
+    <div class="mt-4">
+        <button type="submit" class="btn btn-primary">Adicionar Pacote</button>
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">Cancelar</a>
+    </div>
+</form>
+{% endblock %}
